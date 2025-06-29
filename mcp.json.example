@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "druid": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/ABSOLUTE/PATH/TO/druid-mcp",
+        "run",
+        "main.py"
+      ],
+      "env": {
+        "DRUID_CLUSTERS": "dev=http://localhost:8088 stage=http://localhost:8089 prod=http://localhost:8090",
+        "DRUID_DEFAULT_CLUSTER": "dev"
+      }
+    }
+  }
+}
