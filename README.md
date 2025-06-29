@@ -52,7 +52,7 @@ pip install -e .
 Configure multiple Druid clusters with whitespace-separated key=value pairs:
 
 ```bash
-# Define available clusters
+# Define available clusters (optional, defaults to "localhost=http://localhost:8088")
 export DRUID_CLUSTERS="localhost=http://localhost:8088 dev=https://druid.dev.example.com prod=https://druid.prod.example.com"
 
 # Set default cluster (optional, defaults to "localhost")
