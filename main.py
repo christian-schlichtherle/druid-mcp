@@ -3,17 +3,14 @@ import calendar
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from os import getenv
-from typing import Any, Final
+from typing import Any
 
 import httpx
 from dateutil.relativedelta import relativedelta
 from mcp.server.fastmcp import FastMCP
 
-CACHE_TTL: Final = timedelta(minutes=5)
-
-schema_cache = {}
 
 
 def check_truthy(value: Any, message: str) -> Any:
@@ -196,54 +193,6 @@ async def _check_leader_service(cluster: str, endpoint: str) -> dict[str, Any]:
         return {"available": False, "leader": None}
 
 
-async def _druid_resource(cluster: str, path: str) -> str:
-    """Generic Druid API resource handler - direct URL rewrite and cache
-    
-    Args:
-        cluster: The cluster ID (must be in whitelist)
-        path: The Druid API path (without /druid prefix)
-        
-    Returns:
-        The API response as a string
-        
-    Raises:
-        ValueError: If the cluster is not whitelisted
-    """
-    if cluster not in DRUID_CLUSTERS:
-        raise ValueError(f"Cluster '{cluster}' not whitelisted. Available clusters: {list(DRUID_CLUSTERS.keys())}")
-
-    # Check cache first (with cluster-aware key)
-    cache_key = f"{cluster}:{path}"
-    if cache_key in schema_cache:
-        cached_data, timestamp = schema_cache[cache_key]
-        if datetime.now() - timestamp < CACHE_TTL:
-            return cached_data
-
-    # Get the shared client from context
-    ctx = mcp.get_context()
-    if ctx is None:
-        raise RuntimeError("Context not available. Server may not be started properly.")
-
-    app_context = ctx.request_context.lifespan_context
-    assert isinstance(app_context, AppContext)
-
-    if cluster not in app_context.clients:
-        raise RuntimeError(f"No client available for cluster '{cluster}'")
-
-    client = app_context.clients[cluster]
-
-    try:
-        response = await client.get(f"/druid/{path}")
-        response.raise_for_status()
-        result = response.text
-
-        # Cache the result
-        schema_cache[cache_key] = (result, datetime.now())
-        return result
-    except httpx.HTTPStatusError as e:
-        if e.response.content:
-            raise DruidError(e.response.json())
-        raise
 
 
 @asynccontextmanager
@@ -703,148 +652,6 @@ async def get_lookup_status(cluster: str, lookup_id: str = "", tier: str = "__de
     return status
 
 
-@mcp.resource("druid://{cluster}/{s1}")
-async def druid_resource_level1(cluster: str, s1: str) -> str:
-    """Access Druid v2 API endpoints with single path segment
-    
-    Handles URIs like druid://cluster/datasources
-    Maps to Druid API endpoint: /druid/v2/{s1}
-    
-    Args:
-        cluster: Cluster ID (must be whitelisted)
-        s1: First path segment (e.g., "datasources")
-        
-    Returns:
-        JSON response from Druid API as string
-        
-    Examples:
-        - druid://localhost/datasources -> /druid/v2/datasources
-    """
-    return await _druid_resource(cluster, f"v2/{s1}")
-
-
-@mcp.resource("druid://{cluster}/{s1}/{s2}")
-async def druid_resource_level2(cluster: str, s1: str, s2: str) -> str:
-    """Access Druid API endpoints with two path segments
-    
-    Handles URIs like druid://cluster/coordinator/v1
-    Maps to Druid API endpoint: /druid/{s1}/{s2}
-    
-    Args:
-        cluster: Cluster ID (must be whitelisted)
-        s1: First path segment (e.g., "coordinator", "indexer")
-        s2: Second path segment (e.g., "v1")
-        
-    Returns:
-        JSON response from Druid API as string
-        
-    Examples:
-        - druid://localhost/coordinator/v1 -> /druid/coordinator/v1
-        - druid://localhost/indexer/v1 -> /druid/indexer/v1
-    """
-    return await _druid_resource(cluster, f"{s1}/{s2}")
-
-
-@mcp.resource("druid://{cluster}/{s1}/{s2}/{s3}")
-async def druid_resource_level3(cluster: str, s1: str, s2: str, s3: str) -> str:
-    """Access Druid API endpoints with three path segments
-    
-    Handles URIs like druid://cluster/coordinator/v1/datasources
-    Maps to Druid API endpoint: /druid/{s1}/{s2}/{s3}
-    
-    Args:
-        cluster: Cluster ID (must be whitelisted)
-        s1: First path segment (e.g., "coordinator", "indexer")
-        s2: Second path segment (e.g., "v1")
-        s3: Third path segment (e.g., "datasources", "tasks")
-        
-    Returns:
-        JSON response from Druid API as string
-        
-    Examples:
-        - druid://localhost/coordinator/v1/datasources -> /druid/coordinator/v1/datasources
-        - druid://localhost/indexer/v1/supervisor -> /druid/indexer/v1/supervisor
-        - druid://localhost/v2/datasources/sumup -> /druid/v2/datasources/sumup
-    """
-    return await _druid_resource(cluster, f"{s1}/{s2}/{s3}")
-
-
-@mcp.resource("druid://{cluster}/{s1}/{s2}/{s3}/{s4}")
-async def druid_resource_level4(cluster: str, s1: str, s2: str, s3: str, s4: str) -> str:
-    """Access Druid API endpoints with four path segments
-    
-    Handles URIs like druid://cluster/coordinator/v1/metadata/datasources
-    Maps to Druid API endpoint: /druid/{s1}/{s2}/{s3}/{s4}
-    
-    Args:
-        cluster: Cluster ID (must be whitelisted)
-        s1: First path segment (e.g., "coordinator", "indexer")
-        s2: Second path segment (e.g., "v1")
-        s3: Third path segment (e.g., "metadata", "task")
-        s4: Fourth path segment (e.g., "datasources", task_id)
-        
-    Returns:
-        JSON response from Druid API as string
-        
-    Examples:
-        - druid://localhost/coordinator/v1/metadata/datasources -> /druid/coordinator/v1/metadata/datasources
-        - druid://localhost/indexer/v1/task/abc123 -> /druid/indexer/v1/task/abc123
-        - druid://localhost/coordinator/v1/lookups/config -> /druid/coordinator/v1/lookups/config
-    """
-    return await _druid_resource(cluster, f"{s1}/{s2}/{s3}/{s4}")
-
-
-@mcp.resource("druid://{cluster}/{s1}/{s2}/{s3}/{s4}/{s5}")
-async def druid_resource_level5(cluster: str, s1: str, s2: str, s3: str, s4: str, s5: str) -> str:
-    """Access Druid API endpoints with five path segments
-    
-    Handles URIs like druid://cluster/coordinator/v1/metadata/datasources/sumup/segments
-    Maps to Druid API endpoint: /druid/{s1}/{s2}/{s3}/{s4}/{s5}
-    
-    Args:
-        cluster: Cluster ID (must be whitelisted)
-        s1: First path segment (e.g., "coordinator", "indexer")
-        s2: Second path segment (e.g., "v1")
-        s3: Third path segment (e.g., "metadata", "supervisor")
-        s4: Fourth path segment (e.g., "datasources", supervisor_id)
-        s5: Fifth path segment (e.g., "segments", "status")
-        
-    Returns:
-        JSON response from Druid API as string
-        
-    Examples:
-        - druid://localhost/coordinator/v1/metadata/datasources/sumup/segments -> /druid/coordinator/v1/metadata/datasources/sumup/segments
-        - druid://localhost/indexer/v1/supervisor/kafka_sumup/status -> /druid/indexer/v1/supervisor/kafka_sumup/status
-        - druid://localhost/coordinator/v1/lookups/config/__default/my_lookup -> /druid/coordinator/v1/lookups/config/__default/my_lookup
-    """
-    return await _druid_resource(cluster, f"{s1}/{s2}/{s3}/{s4}/{s5}")
-
-
-@mcp.resource("druid://{cluster}/{s1}/{s2}/{s3}/{s4}/{s5}/{s6}")
-async def druid_resource_level6(cluster: str, s1: str, s2: str, s3: str, s4: str, s5: str, s6: str) -> str:
-    """Access Druid API endpoints with five path segments
-    
-    Handles URIs like druid://cluster/coordinator/v1/metadata/datasources/sumup/segments
-    Maps to Druid API endpoint: /druid/{s1}/{s2}/{s3}/{s4}/{s5}/{s6}
-    
-    Args:
-        cluster: Cluster ID (must be whitelisted)
-        s1: First path segment (e.g., "coordinator", "indexer")
-        s2: Second path segment (e.g., "v1")
-        s3: Third path segment (e.g., "metadata", "supervisor")
-        s4: Fourth path segment (e.g., "datasources", supervisor_id)
-        s5: Fifth path segment (e.g., "segments", "status")
-        s6: Sixth path segment
-        
-    Returns:
-        JSON response from Druid API as string
-        
-    Examples:
-        - druid://localhost/coordinator/v1/metadata/datasources/sumup/segments -> /druid/coordinator/v1/metadata/datasources/sumup/segments
-        - druid://localhost/indexer/v1/supervisor/kafka_sumup/status -> /druid/indexer/v1/supervisor/kafka_sumup/status
-        - druid://localhost/coordinator/v1/lookups/config/__default/my_lookup -> /druid/coordinator/v1/lookups/config/__default/my_lookup
-    """
-    return await _druid_resource(cluster, f"{s1}/{s2}/{s3}/{s4}/{s5}/{s6}")
 
 
 @mcp.prompt()
