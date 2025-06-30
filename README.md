@@ -209,41 +209,6 @@ Druid API endpoints are exposed as MCP resources with caching and multi-cluster 
 
 Replace `localhost` with any configured cluster name to access different environments.
 
-## Migration Guide
-
-### From Stateful to Explicit Cluster Parameters
-
-The Druid MCP server has transitioned from implicit cluster state to explicit cluster parameters for better clarity and multi-cluster support.
-
-#### Old Pattern (Stateful)
-```python
-# Switch cluster state
-set_cluster("prod")
-
-# All subsequent operations use the "prod" cluster
-datasources = list_datasources()
-schema = get_datasource_schema("wikipedia")
-status = get_cluster_status()
-```
-
-#### New Pattern (Explicit)
-```python
-# Each operation explicitly specifies the cluster
-datasources = list_datasources("prod")
-schema = get_datasource_schema("prod", "wikipedia")
-status = get_cluster_status("prod")
-
-# Multi-cluster operations are now trivial
-dev_data = list_datasources("dev")
-prod_data = list_datasources("prod")
-```
-
-### Benefits
-- **No hidden state**: Always clear which cluster is being queried
-- **Parallel operations**: Query multiple clusters simultaneously
-- **Better error messages**: Invalid clusters are caught immediately
-- **Self-documenting code**: Cluster intent is explicit in every call
-
 ## Security
 
 This MCP server provides **read-only** access to your Druid cluster. No write operations are supported or allowed.
