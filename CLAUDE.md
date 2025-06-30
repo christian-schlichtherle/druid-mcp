@@ -45,18 +45,14 @@ mcp install main.py
 - `druid://{cluster}/overlord/v1/supervisors`: Supervisor list
 - `druid://{cluster}/status/health`: Health status
 
-#### Tools (18 total)
+#### Tools (16 total)
 
 **IMPORTANT: Cluster Parameter Change**
-All tools (except `get_cluster`, `set_cluster`, `list_clusters`) now require an explicit `cluster` parameter as the first argument. This enables efficient multi-cluster operations without state management.
+All tools (except `list_clusters`) now require an explicit `cluster` parameter as the first argument. This enables efficient multi-cluster operations without state management.
 
 Example:
 ```python
-# Old (stateful):
-set_cluster("fret-prod")
-execute_sql_query("SELECT COUNT(*) FROM wikipedia")
-
-# New (explicit):
+# Explicit cluster specification:
 execute_sql_query("fret-prod", "SELECT COUNT(*) FROM wikipedia")
 ```
 
@@ -73,7 +69,7 @@ execute_sql_query("fret-prod", "SELECT COUNT(*) FROM wikipedia")
 - `list_lookups(cluster, tier)`, `get_lookup(cluster, lookup_id, tier)`, `get_lookup_status(cluster, ...)`: Lookup management
 
 **Multi-Cluster:**
-- `get_cluster()`, `set_cluster(cluster)`, `list_clusters()`: Cluster management (no cluster parameter needed)
+- `list_clusters()`: Cluster management (no cluster parameter needed)
 
 #### Prompts (5 total)
 All prompts include smart defaults (midnight same day last month → now):
@@ -108,7 +104,6 @@ All prompts include smart defaults (midnight same day last month → now):
 ## Environment Configuration
 
 - `DRUID_CLUSTERS`: Whitespace-separated cluster definitions as key=value pairs (default: "localhost=http://localhost:8088")
-- `DRUID_DEFAULT_CLUSTER`: Default cluster name (default: "localhost")
 
 ## Dependencies
 
@@ -121,7 +116,7 @@ All prompts include smart defaults (midnight same day last month → now):
 
 When extending functionality:
 1. Use `@mcp.tool()` decorator with comprehensive docstrings
-2. **Always include `cluster: str` as the first parameter** (except for cluster management tools)
+2. **Always include `cluster: str` as the first parameter** (except for `list_clusters` tool)
 3. Implement consistent error handling with DruidError
 4. Follow async/await patterns for all HTTP calls
 5. Add optional parameters with sensible defaults

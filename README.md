@@ -55,9 +55,6 @@ Configure multiple Druid clusters with whitespace-separated key=value pairs:
 ```bash
 # Define available clusters (optional, defaults to "localhost=http://localhost:8088")
 export DRUID_CLUSTERS="localhost=http://localhost:8088 dev=https://druid.dev.example.com prod=https://druid.prod.example.com"
-
-# Set default cluster (optional, defaults to "localhost")
-export DRUID_DEFAULT_CLUSTER=dev
 ```
 
 The cluster names can be any valid string and are used in:
@@ -93,7 +90,7 @@ mcp install main.py
 
 ## Available Tools
 
-The MCP server exposes 18 tools organized by functionality:
+The MCP server exposes 16 tools organized by functionality:
 
 **Important**: All tools (except cluster management tools) require an explicit `cluster` parameter as the first argument. This enables efficient multi-cluster operations without state management.
 
@@ -123,8 +120,6 @@ The MCP server exposes 18 tools organized by functionality:
 - `get_lookup_status(cluster, lookup_id, tier)`: Get lookup loading status across nodes
 
 ### Multi-Cluster Management
-- `get_cluster()`: Get the current active cluster
-- `set_cluster(cluster)`: Switch to a different cluster
 - `list_clusters()`: List all configured clusters with their base URLs
 
 ## Analysis Prompts

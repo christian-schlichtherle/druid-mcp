@@ -154,7 +154,6 @@ Resources can be accessed directly via the MCP protocol using any MCP-compatible
 Resources respect the following environment variables:
 
 - `DRUID_CLUSTERS`: Whitespace-separated cluster definitions (e.g., "localhost=http://localhost:8088 prod=https://druid.prod.com:8088")
-- `DRUID_DEFAULT_CLUSTER`: Default cluster to use if not specified
 - `DRUID_ROUTER_URL`: Legacy single-cluster URL (deprecated)
 
 ## Implementation Details

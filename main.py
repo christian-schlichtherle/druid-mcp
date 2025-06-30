@@ -16,11 +16,11 @@ CACHE_TTL: Final = timedelta(minutes=5)
 schema_cache = {}
 
 
-def parse_cluster_config() -> tuple[dict[str, str], str]:
+def parse_cluster_config() -> dict[str, str]:
     """Parse cluster configuration from environment variables
     
     Returns:
-        Tuple of (ALLOWED_CLUSTERS dict, default_cluster name)
+        Dictionary of cluster names to their base URLs
     """
 
     def parse_pair(pair: str) -> tuple[str, str]:
@@ -33,14 +33,10 @@ def parse_cluster_config() -> tuple[dict[str, str], str]:
         if '=' in pair
     )
 
-    default_cluster = getenv("DRUID_DEFAULT_CLUSTER", "localhost")
-    if default_cluster not in clusters:
-        raise ValueError(f"Default cluster '{default_cluster}' not found in DRUID_CLUSTERS")
-
-    return clusters, default_cluster
+    return clusters
 
 
-DRUID_CLUSTERS, DRUID_DEFAULT_CLUSTER = parse_cluster_config()
+DRUID_CLUSTERS = parse_cluster_config()
 
 
 def get_default_time_interval():
@@ -99,7 +95,6 @@ class AppContext:
     """Application context containing shared resources"""
     # Store clients per cluster
     clients: dict[str, httpx.AsyncClient]
-    current_cluster: str
 
 
 class DruidError(Exception):
@@ -269,7 +264,7 @@ async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
     }
 
     try:
-        yield AppContext(clients=clients, current_cluster=DRUID_DEFAULT_CLUSTER)
+        yield AppContext(clients=clients)
     finally:
         await asyncio.gather(*[client.aclose() for client in clients.values()], return_exceptions=True)
 
@@ -287,47 +282,6 @@ async def list_clusters() -> dict[str, str]:
     """
     return DRUID_CLUSTERS
 
-
-@mcp.tool()
-async def get_cluster() -> str:
-    """Get the current active Druid cluster
-    
-    Returns:
-        The cluster ID of the currently active cluster
-    """
-    ctx = mcp.get_context()
-    if ctx is None:
-        raise RuntimeError("Context not available. Server may not be started properly.")
-
-    app_context = ctx.request_context.lifespan_context
-    assert isinstance(app_context, AppContext)
-    return app_context.current_cluster
-
-
-@mcp.tool()
-async def set_cluster(cluster: str) -> str:
-    """Set the active Druid cluster (must be whitelisted)
-    
-    Args:
-        cluster: The cluster ID to switch to
-        
-    Returns:
-        Confirmation message
-        
-    Raises:
-        ValueError: If the cluster is not in the whitelist
-    """
-    if cluster not in DRUID_CLUSTERS:
-        raise ValueError(f"Cluster '{cluster}' not in whitelist. Available clusters: {list(DRUID_CLUSTERS.keys())}")
-
-    ctx = mcp.get_context()
-    if ctx is None:
-        raise RuntimeError("Context not available. Server may not be started properly.")
-
-    app_context = ctx.request_context.lifespan_context
-    assert isinstance(app_context, AppContext)
-    app_context.current_cluster = cluster
-    return f"Switched to cluster: {cluster}"
 
 
 # MCP tools - query execution
@@ -1035,7 +989,3 @@ Queries to run:
 2. Find min/max values for metrics
 3. Check time coverage and gaps
 4. Verify expected dimension cardinality"""
-
-
-if __name__ == "__main__":
-    mcp.run()
