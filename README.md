@@ -1,7 +1,8 @@
 # Druid MCP
 
-This repository provides an MCP server for read-only access to one or more Apache Druid clusters.
-This is particularly useful for ad-hoc data analysis and comparison across Druid clusters.
+This repository provides an MCP (Model Context Protocol) server for comprehensive read-only access to one or more
+Apache Druid clusters for ad-hoc data analysis, monitoring, troubleshooting, and comparison.
+
 For example, if you have multiple environments, each with their own Druid cluster, but ingesting data from the same
 origin, then you could use a simple prompt like this to run a complex cross-cluster comparison:
 
