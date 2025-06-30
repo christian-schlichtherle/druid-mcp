@@ -16,27 +16,22 @@ CACHE_TTL: Final = timedelta(minutes=5)
 schema_cache = {}
 
 
-def parse_cluster_config() -> dict[str, str]:
-    """Parse cluster configuration from environment variables
-    
-    Returns:
-        Dictionary of cluster names to their base URLs
-    """
-
-    def parse_pair(pair: str) -> tuple[str, str]:
-        cluster_name, cluster_url = pair.split(sep='=', maxsplit=1)
-        return cluster_name.strip(), cluster_url.strip()
-
-    clusters = dict(
-        parse_pair(pair)
-        for pair in getenv("DRUID_CLUSTERS", "localhost=http://localhost:8088").split()
-        if '=' in pair
-    )
-
-    return clusters
+def check_truthy(value: Any, message: str) -> Any:
+    """Check if the value is truthy."""
+    if not value:
+        raise ValueError(message)
+    return value
 
 
-DRUID_CLUSTERS = parse_cluster_config()
+def parse_key_value_pairs(pairs: str) -> dict[str, str]:
+    """Parse space-separated key=value pairs."""
+    return {
+        k: v for k, v in (e.split("=", 1) for e in pairs.split()) if k and v
+    }
+
+
+DRUID_CLUSTERS = check_truthy(parse_key_value_pairs(getenv("DRUID_CLUSTERS", "localhost=http://localhost:8088")),
+                              "DRUID_CLUSTERS must not be empty")
 
 
 def get_default_time_interval():
@@ -272,7 +267,6 @@ async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
 mcp = FastMCP("druid", lifespan=lifespan)
 
 
-# MCP tools - cluster management (don't require cluster parameter)
 @mcp.tool()
 async def list_clusters() -> dict[str, str]:
     """List all available Druid clusters with their base URLs
@@ -283,8 +277,6 @@ async def list_clusters() -> dict[str, str]:
     return DRUID_CLUSTERS
 
 
-
-# MCP tools - query execution
 @mcp.tool()
 async def execute_sql_query(cluster: str, query: str, context: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Execute SQL query against Druid
@@ -337,7 +329,6 @@ async def execute_native_query(cluster: str, query: dict[str, Any]) -> list[dict
     return await _make_request(cluster, "POST", "/druid/v2", json_data=query)
 
 
-# MCP tools - datasource operations
 @mcp.tool()
 async def list_datasources(cluster: str, include_details: bool = False) -> list[Any]:
     """List all available datasources in the cluster
@@ -394,7 +385,6 @@ async def get_datasource_schema(cluster: str, datasource: str) -> dict[str, Any]
     return schema
 
 
-# MCP tools - supervisor operations
 @mcp.tool()
 async def list_supervisors(cluster: str, include_state: bool = False) -> list[Any]:
     """List all supervisors in the cluster
@@ -431,7 +421,6 @@ async def get_supervisor_status(cluster: str, supervisor_id: str) -> dict[str, A
     return await _make_request(cluster, "GET", f"/druid/indexer/v1/supervisor/{supervisor_id}/status")
 
 
-# MCP tools - task operations
 @mcp.tool()
 async def list_tasks(
         cluster: str,
@@ -499,7 +488,6 @@ async def get_task_status(cluster: str, task_id: str) -> dict[str, Any]:
     return await _make_request(cluster, "GET", f"/druid/indexer/v1/task/{task_id}/status")
 
 
-# MCP tools - segment operations
 @mcp.tool()
 async def list_segments(
         cluster: str,
@@ -572,7 +560,6 @@ async def get_segments_info(cluster: str, datasource: str) -> dict[str, Any]:
         raise
 
 
-# MCP tools - cluster and service operations
 @mcp.tool()
 async def get_cluster_status(cluster: str) -> dict[str, Any]:
     """Get overall cluster health status
@@ -645,7 +632,6 @@ async def list_services(cluster: str, service_type: str = '') -> list[dict[str, 
     return servers
 
 
-# MCP tools - lookup operations
 @mcp.tool()
 async def list_lookups(cluster: str, tier: str = "") -> dict[str, Any]:
     """List all lookups or lookups in a specific tier
@@ -717,7 +703,6 @@ async def get_lookup_status(cluster: str, lookup_id: str = "", tier: str = "__de
     return status
 
 
-# MCP resources
 @mcp.resource("druid://{cluster}/{s1}")
 async def druid_resource_level1(cluster: str, s1: str) -> str:
     """Access Druid v2 API endpoints with single path segment
@@ -862,7 +847,6 @@ async def druid_resource_level6(cluster: str, s1: str, s2: str, s3: str, s4: str
     return await _druid_resource(cluster, f"{s1}/{s2}/{s3}/{s4}/{s5}/{s6}")
 
 
-# MCP prompts
 @mcp.prompt()
 def analyze_time_range(
         datasource: str,
