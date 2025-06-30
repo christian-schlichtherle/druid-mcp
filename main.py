@@ -420,29 +420,22 @@ async def get_datasource_schema(cluster: str, datasource: str) -> dict[str, Any]
     # Get basic schema
     schema = await _make_request(cluster, "GET", f"/druid/v2/datasources/{datasource}")
 
-    # Enhanced schema with type information from SQL metadata
-    try:
-        # Use INFORMATION_SCHEMA to get column types
-        sql_query = "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?"
-        columns_info = await _make_request(cluster, "POST", "/druid/v2/sql", json_data={
-            "query": sql_query,
-            "parameters": [{"type": "VARCHAR", "value": datasource}]
-        })
+    # Use INFORMATION_SCHEMA to get column types
+    sql_query = "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?"
+    columns_info = await _make_request(cluster, "POST", "/druid/v2/sql", json_data={
+        "query": sql_query,
+        "parameters": [{"type": "VARCHAR", "value": datasource}]
+    })
 
-        # Create type mapping
-        type_mapping = {col["COLUMN_NAME"]: col["DATA_TYPE"] for col in columns_info}
+    # Create type mapping
+    type_mapping = {col["COLUMN_NAME"]: col["DATA_TYPE"] for col in columns_info}
 
-        # Enhance dimensions and metrics with types
-        if "dimensions" in schema:
-            schema["dimensions"] = _enhance_schema_items(schema["dimensions"], type_mapping, "STRING")
+    # Enhance dimensions and metrics with types
+    if "dimensions" in schema:
+        schema["dimensions"] = _enhance_schema_items(schema["dimensions"], type_mapping, "STRING")
 
-        if "metrics" in schema:
-            schema["metrics"] = _enhance_schema_items(schema["metrics"], type_mapping, "DOUBLE")
-
-    except Exception as e:
-        # If SQL metadata fails, return basic schema without types
-        print(f"Warning: Failed to enhance schema with types for {datasource}: {e}")
-        pass
+    if "metrics" in schema:
+        schema["metrics"] = _enhance_schema_items(schema["metrics"], type_mapping, "DOUBLE")
 
     return schema
 
