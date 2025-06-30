@@ -1,7 +1,7 @@
 [project]
 name = "druid-mcp"
 version = "0.1.0"
-description = "An MCP server for read-only access to one or more Apache Druid clusters."
+description = "An MCP server for comprehensive read-only access to one or more Apache Druid clusters for ad-hoc data analysis, monitoring, troubleshooting, and comparison."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
