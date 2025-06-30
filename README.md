@@ -250,4 +250,4 @@ This MCP server provides **read-only** access to your Druid cluster. No write op
 
 ## License
 
-Apache License
+MIT
