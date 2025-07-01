@@ -103,7 +103,7 @@ All prompts include smart defaults (midnight same day last month → now):
 
 ## Environment Configuration
 
-- `DRUID_CLUSTERS`: Whitespace-separated cluster definitions as key=value pairs (default: "localhost=http://localhost:8088")
+- `DRUID_CLUSTER_URLS`: Whitespace-separated cluster definitions as key=value pairs (default: "localhost=http://localhost:8088")
 
 ## Dependencies
 

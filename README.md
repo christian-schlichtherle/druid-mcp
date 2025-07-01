@@ -54,7 +54,7 @@ Configure multiple Druid clusters with whitespace-separated key=value pairs:
 
 ```bash
 # Define available clusters (optional, defaults to "localhost=http://localhost:8088")
-export DRUID_CLUSTERS="localhost=http://localhost:8088 dev=https://druid.dev.example.com prod=https://druid.prod.example.com"
+export DRUID_CLUSTER_URLS="localhost=http://localhost:8088 dev=https://druid.dev.example.com prod=https://druid.prod.example.com"
 ```
 
 The cluster names can be any valid string and are used in:

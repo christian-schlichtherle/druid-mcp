@@ -27,8 +27,8 @@ def parse_key_value_pairs(pairs: str) -> dict[str, str]:
     }
 
 
-DRUID_CLUSTERS = check_truthy(parse_key_value_pairs(getenv("DRUID_CLUSTERS", "localhost=http://localhost:8088")),
-                              "DRUID_CLUSTERS must not be empty")
+DRUID_CLUSTER_URLS = check_truthy(parse_key_value_pairs(getenv("DRUID_CLUSTER_URLS", "localhost=http://localhost:8088")),
+                              "DRUID_CLUSTER_URLS must not be empty")
 
 
 def get_default_time_interval():
@@ -132,8 +132,8 @@ async def _make_request(
     assert isinstance(app_context, AppContext)
 
     # Validate cluster
-    if cluster not in DRUID_CLUSTERS:
-        available = ", ".join(DRUID_CLUSTERS.keys())
+    if cluster not in DRUID_CLUSTER_URLS:
+        available = ", ".join(DRUID_CLUSTER_URLS.keys())
         raise ValueError(f"Invalid cluster '{cluster}'. Available clusters: {available}")
 
     # Get the client for the cluster
@@ -174,7 +174,7 @@ async def _check_leader_service(cluster: str, endpoint: str) -> dict[str, Any]:
     assert isinstance(app_context, AppContext)
 
     # Validate cluster
-    if cluster not in DRUID_CLUSTERS:
+    if cluster not in DRUID_CLUSTER_URLS:
         raise ValueError(f"Invalid cluster '{cluster}'")
 
     # Get the client for the target cluster
@@ -204,7 +204,7 @@ async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
             headers={"Content-Type": "application/json"},
             timeout=30.0,
         )
-        for cluster_name, cluster_url in DRUID_CLUSTERS.items()
+        for cluster_name, cluster_url in DRUID_CLUSTER_URLS.items()
     }
 
     try:
@@ -223,7 +223,7 @@ async def list_clusters() -> list[str]:
     Returns:
         Sorted list of cluster names
     """
-    return sorted(DRUID_CLUSTERS.keys())
+    return sorted(DRUID_CLUSTER_URLS.keys())
 
 
 @mcp.tool()
@@ -536,7 +536,7 @@ async def get_cluster_status(cluster: str) -> dict[str, Any]:
             assert isinstance(app_context, AppContext)
 
             # Validate cluster
-            if cluster not in DRUID_CLUSTERS:
+            if cluster not in DRUID_CLUSTER_URLS:
                 raise ValueError(f"Invalid cluster '{cluster}'")
 
             if cluster in app_context.clients:

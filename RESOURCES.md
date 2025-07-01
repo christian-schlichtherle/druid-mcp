@@ -115,7 +115,7 @@ Where:
 
 ### Multi-Cluster Support
 - Resources support multiple clusters via the `{cluster}` parameter
-- Cluster must be whitelisted in `DRUID_CLUSTERS` environment variable
+- Cluster must be whitelisted in `DRUID_CLUSTER_URLS` environment variable
 - Each cluster has its own HTTP client for proper connection management
 
 ### Error Handling
@@ -153,7 +153,7 @@ Resources can be accessed directly via the MCP protocol using any MCP-compatible
 
 Resources respect the following environment variables:
 
-- `DRUID_CLUSTERS`: Whitespace-separated cluster definitions (e.g., "localhost=http://localhost:8088 prod=https://druid.prod.com:8088")
+- `DRUID_CLUSTER_URLS`: Whitespace-separated cluster definitions (e.g., "localhost=http://localhost:8088 prod=https://druid.prod.com:8088")
 - `DRUID_ROUTER_URL`: Legacy single-cluster URL (deprecated)
 
 ## Implementation Details

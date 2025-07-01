@@ -11,7 +11,7 @@
         "main.py"
       ],
       "env": {
-        "DRUID_CLUSTERS": "dev=http://localhost:8089 stage=http://localhost:8090 prod=http://localhost:8091"
+        "DRUID_CLUSTER_URLS": "dev=http://localhost:8089 stage=http://localhost:8090 prod=http://localhost:8091"
       }
     }
   }
