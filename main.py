@@ -217,13 +217,13 @@ mcp = FastMCP("druid", lifespan=lifespan)
 
 
 @mcp.tool()
-async def list_clusters() -> dict[str, str]:
-    """List all available Druid clusters with their base URLs
+async def list_clusters() -> list[str]:
+    """List all available Druid clusters
 
     Returns:
-        Dictionary mapping cluster IDs to their base URLs
+        Sorted list of cluster names
     """
-    return DRUID_CLUSTERS
+    return sorted(DRUID_CLUSTERS.keys())
 
 
 @mcp.tool()

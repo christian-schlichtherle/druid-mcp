@@ -120,7 +120,7 @@ The MCP server exposes 16 tools organized by functionality:
 - `get_lookup_status(cluster, lookup_id, tier)`: Get lookup loading status across nodes
 
 ### Multi-Cluster Management
-- `list_clusters()`: List all configured clusters with their base URLs
+- `list_clusters()`: List all configured Druid cluster names
 
 ## Analysis Prompts
 
