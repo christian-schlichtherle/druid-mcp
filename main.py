@@ -12,7 +12,6 @@ from dateutil.relativedelta import relativedelta
 from mcp.server.fastmcp import FastMCP
 
 
-
 def check_truthy(value: Any, message: str) -> Any:
     """Check if the value is truthy."""
     if not value:
@@ -27,8 +26,9 @@ def parse_key_value_pairs(pairs: str) -> dict[str, str]:
     }
 
 
-DRUID_CLUSTER_URLS = check_truthy(parse_key_value_pairs(getenv("DRUID_CLUSTER_URLS", "localhost=http://localhost:8088")),
-                              "DRUID_CLUSTER_URLS must not be empty")
+DRUID_CLUSTER_URLS = check_truthy(
+    parse_key_value_pairs(getenv("DRUID_CLUSTER_URLS", "localhost=http://localhost:8088")),
+    "DRUID_CLUSTER_URLS must not be empty")
 
 
 def get_default_time_interval():
@@ -191,8 +191,6 @@ async def _check_leader_service(cluster: str, endpoint: str) -> dict[str, Any]:
         }
     except (httpx.RequestError, httpx.HTTPStatusError):
         return {"available": False, "leader": None}
-
-
 
 
 @asynccontextmanager
@@ -650,8 +648,6 @@ async def get_lookup_status(cluster: str, lookup_id: str = "", tier: str = "__de
         }
 
     return status
-
-
 
 
 @mcp.prompt()
