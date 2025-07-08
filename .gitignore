@@ -1,7 +1,7 @@
 *.egg-info
 *.py[oc]
 .venv
-/.claude
+/.claude/settings.local.json
 /CLAUDE.local.md
 /mcp.json
 __pycache__/
